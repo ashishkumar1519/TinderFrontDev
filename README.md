@@ -168,3 +168,73 @@ npm run build
 - Set up domain name
 - Monitor Nginx logs: `sudo tail -f /var/log/nginx/access.log`
 - Monitor application performance
+
+## Adding a Custom Domain Name
+
+### Prerequisites
+- Registered domain (from GoDaddy, Namecheap, etc.)
+- Cloudflare account (free tier available)
+- EC2 instance public IP address
+
+### Domain Setup Steps
+
+1. **Purchase Domain Name**
+   - Buy a domain from GoDaddy or similar registrar
+   - Example: `devtinder.in`
+
+2. **Create Cloudflare Account**
+   - Sign up at [https://www.cloudflare.com/](https://www.cloudflare.com/)
+   - Add your domain to Cloudflare
+
+3. **Update Nameservers on GoDaddy**
+   - Go to GoDaddy domain settings
+   - Find "Nameservers" settings
+   - Replace with Cloudflare nameservers provided by Cloudflare
+   - Save changes
+
+4. **Wait for DNS Propagation**
+   - Nameserver updates can take 15-30 minutes
+   - You can check status at [https://www.whatsmydns.net/](https://www.whatsmydns.net/)
+
+5. **Add DNS Record in Cloudflare**
+   - Go to Cloudflare Dashboard → DNS
+   - Create new A record:
+     - **Type:** A
+     - **Name:** @ (or your subdomain)
+     - **IPv4 Address:** Your EC2 instance public IP (e.g., `43.204.96.49`)
+     - **TTL:** Auto
+     - **Proxy status:** Proxied (orange cloud)
+
+6. **Enable SSL/TLS in Cloudflare**
+   - Go to SSL/TLS tab
+   - Set encryption mode to "Full" or "Full (strict)"
+   - Wait for SSL certificate to be issued (usually instant)
+
+7. **Update Nginx Configuration**
+   ```bash
+   sudo nano /etc/nginx/sites-available/default
+   ```
+   
+   Update the server_name line:
+   ```nginx
+   server_name devtinder.in www.devtinder.in;
+   ```
+   
+   Then restart Nginx:
+   ```bash
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
+
+8. **Verify Domain Setup**
+   - Wait 2-5 minutes for DNS to propagate
+   - Visit your domain: `https://devtinder.in`
+   - Check SSL certificate: Click padlock icon in browser
+
+### Troubleshooting Domain Issues
+
+- **DNS not resolving:** Check nameservers are updated at GoDaddy
+- **SSL certificate not showing:** Wait 10-15 minutes for Cloudflare to issue it
+- **Domain not pointing to site:** Verify A record IP address matches EC2 instance
+- **Check DNS:** `nslookup devtinder.in` or `dig devtinder.in`
+- **View Nginx errors:** `sudo tail -f /var/log/nginx/error.log`
