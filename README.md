@@ -109,13 +109,62 @@ npm run build
     sudo scp -r dist/* /var/www/html/
     ```
 
-12. **Enable Port 80**
+12. **Configure Nginx for Frontend and API Proxy**
+    ```bash
+    sudo nano /etc/nginx/sites-available/default
+    ```
+    
+    Replace content with:
+    ```nginx
+    server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        server_name _;
+
+        # Frontend - Serve React app
+        location / {
+            root /var/www/html;
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Backend API Proxy
+        location /api/ {
+            proxy_pass http://localhost:3000/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+        }
+    }
+    ```
+
+13. **Test and Restart Nginx**
+    ```bash
+    sudo nginx -t
+    sudo systemctl restart nginx
+    ```
+
+14. **Verify BaseUrl Configuration**
+    - Ensure `BaseUrl` in `src/utils/constant/constant.js` is set to:
+    ```javascript
+    export const BaseUrl = "/api"
+    ```
+    - This proxies all API requests through Nginx to the backend
+
+15. **Enable Port 80**
     - Configure security groups in AWS to allow port 80
     - Go to EC2 Security Groups → Inbound Rules
     - Add rule: Port 80 (HTTP)
 
 ### Post-Deployment
 - Verify frontend is accessible at `http://<your-ec2-public-ip>`
+- All API requests will be proxied through `/api` endpoint
 - Configure SSL certificate for HTTPS (port 443)
 - Set up domain name
+- Monitor Nginx logs: `sudo tail -f /var/log/nginx/access.log`
 - Monitor application performance

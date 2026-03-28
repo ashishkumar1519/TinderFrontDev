@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import Navbar from './Navbar'
-import { Outlet, useNavigate } from 'react-router'
+import { Outlet, useNavigate, useLocation } from 'react-router'
 import Footer from './Footer'
 import { BaseUrl } from '../utils/constant/constant'
 import axios from 'axios'
@@ -10,6 +10,7 @@ import { addUser } from '../utils/store/userSlice'
 function Body() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
    const userReduxData = useSelector((store) => store.user);
 
   const fetchUser = async () => {
@@ -28,10 +29,13 @@ function Body() {
     }
   }
   useEffect(() => {
+    // Don't fetch profile on login page
+    if(location.pathname === "/login") return;
+    
     if(!userReduxData) {
       fetchUser();
     }
-  }, [])
+  }, [location.pathname, userReduxData])
 
 
   return (
